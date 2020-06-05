@@ -1,0 +1,169 @@
+version: '3.3'
+
+networks:
+  net:
+    driver: bridge
+
+services:
+  authelia:
+    image: authelia/authelia
+    container_name: authelia
+    volumes:
+      - ./authelia:/var/lib/authelia
+      - ./configuration.yml:/etc/authelia/configuration.yml:ro
+      - ./users_database.yml:/etc/authelia/users_database.yml
+    networks:
+      - net
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.authelia.rule=Host(`authelia.docker.wwuzerotrust`)'
+      - 'traefik.http.routers.authelia.entrypoints=https'
+      - 'traefik.http.routers.authelia.tls=true'
+      - 'traefik.http.routers.authelia.tls.options=default'
+      - "traefik.http.routers.api.middlewares=forwardauthelia"
+      - "traefik.http.middlewares.forwardauthelia.chain.middlewares=authelia, handler_forwardauth4"
+      - 'traefik.http.middlewares.authelia.forwardauth.address=http://authelia:9091/api/verify?rd=https://authelia.docker.wwuzerotrust'
+      - 'traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true'
+      - 'traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User, Remote-Groups'
+      - 'traefik.http.middlewares.handler_forwardauth4.forwardauth.address=http://192.168.1.103:5000/1'
+      - 'traefik.http.middlewares.handler_forwardauth4.forwardauth.trustForwardHeader=true'
+      - 'traefik.http.middlewares.handler_forwardauth4.forwardauth.authResponseHeaders=Remote-User, Remote-Groups'
+
+    expose:
+      - 9091
+    restart: unless-stopped
+
+  traefik:
+    image: traefik:v2.2
+    container_name: traefik
+    volumes:
+      - ./traefik:/etc/traefik
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - net
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.api.rule=Host(`traefik.docker.wwuzerotrust`)'
+      - 'traefik.http.routers.api.entrypoints=https'
+      - 'traefik.http.routers.api.service=api@internal'
+      - 'traefik.http.routers.api.tls=true'
+      - 'traefik.http.routers.api.tls.options=default'
+      - "traefik.http.routers.api.middlewares=forwardauthstraefik"
+      - "traefik.http.middlewares.forwardauthstraefik.chain.middlewares=test_authelia3, handler_forwardauth3"
+      - 'traefik.http.middlewares.test_authelia3.forwardauth.address=http://authelia:9091/api/verify?rd=https://authelia.docker.wwuzerotrust'
+      - 'traefik.http.middlewares.test_authelia3.forwardauth.trustForwardHeader=true'
+      - 'traefik.http.middlewares.test_authelia3.forwardauth.authResponseHeaders=Remote-User, Remote-Groups'
+      - 'traefik.http.middlewares.handler_forwardauth3.forwardauth.address=http://192.168.1.103:5000/1'
+      - 'traefik.http.middlewares.handler_forwardauth3.forwardauth.trustForwardHeader=true'
+      - 'traefik.http.middlewares.handler_forwardauth3.forwardauth.authResponseHeaders=Remote-User, Remote-Groups'
+    ports:
+      - 80:80
+      - 443:443
+    command:
+      - '--api'
+      - '--providers.docker=true'
+      - '--providers.docker.exposedByDefault=false'
+      - '--providers.file.filename=/etc/traefik/certificates.yml'
+      - '--entrypoints.http=true'
+      - '--entrypoints.http.address=:80'
+      - '--entrypoints.http.http.redirections.entrypoint.to=https'
+      - '--entrypoints.http.http.redirections.entrypoint.scheme=https'
+      - '--entrypoints.https=true'
+      - '--entrypoints.https.address=:443'
+      - '--log=true'
+      - '--log.level=DEBUG'
+      - '--log.filepath=/var/log/traefik.log'
+
+  mariadb:
+    image: wodby/mariadb:$MARIADB_TAG
+    container_name: "mariadb"
+    networks:
+      - net
+    stop_grace_period: 30s
+    environment:
+      MYSQL_ROOT_PASSWORD: $DB_ROOT_PASSWORD
+      MYSQL_DATABASE: $DB_NAME
+      MYSQL_USER: $DB_USER
+      MYSQL_PASSWORD: $DB_PASSWORD
+
+  php:
+    image: wodby/wordpress:$WORDPRESS_TAG
+    container_name: "php"
+    networks:
+      - net
+    environment:
+      PHP_SENDMAIL_PATH: /usr/sbin/sendmail -t -i -S mailhog:1025
+      DB_HOST: $DB_HOST
+      DB_USER: $DB_USER
+      DB_PASSWORD: $DB_PASSWORD
+      DB_NAME: $DB_NAME
+      PHP_FPM_USER: wodby
+      PHP_FPM_GROUP: wodby
+    volumes:
+      - ./wordpress:/var/www/html
+
+  nginx:
+    image: wodby/nginx:$NGINX_TAG
+    container_name: "nginx"
+    networks:
+      - net
+    depends_on:
+      - php
+    environment:
+      NGINX_STATIC_OPEN_FILE_CACHE: "off"
+      NGINX_ERROR_LOG_LEVEL: debug
+      NGINX_BACKEND_HOST: php
+      NGINX_VHOST_PRESET: wordpress
+    volumes:
+      - ./wordpress:/var/www/html
+    labels:
+      - "traefik.http.routers.nginx.rule=Host(`docker.wwuzerotrust`)"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.nginx.entrypoints=https'
+      - 'traefik.http.routers.nginx.tls=true'
+      - 'traefik.http.routers.nginx.tls.options=default'
+      - 'traefik.http.routers.nginx.middlewares=authelia@docker'
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: "mailhog"
+    networks:
+      - net
+    labels:
+      - "traefik.http.services.mailhog.loadbalancer.server.port=8025"
+      - "traefik.http.routers.mailhog.rule=Host(`mailhog.docker.wwuzerotrust`)"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.mailhog.entrypoints=https'
+      - 'traefik.http.routers.mailhog.tls=true'
+      - 'traefik.http.routers.mailhog.tls.options=default'
+      - "traefik.http.routers.mailhog.middlewares=forwardauthsmailhog"
+      - "traefik.http.middlewares.forwardauthsmailhog.chain.middlewares=test_authelia2, handler_forwardauth2"
+      - 'traefik.http.middlewares.test_authelia2.forwardauth.address=http://authelia:9091/api/verify?rd=https://authelia.docker.wwuzerotrust'
+      - 'traefik.http.middlewares.test_authelia2.forwardauth.trustForwardHeader=true'
+      - 'traefik.http.middlewares.test_authelia2.forwardauth.authResponseHeaders=Remote-User, Remote-Groups'
+      - 'traefik.http.middlewares.handler_forwardauth2.forwardauth.address=http://192.168.1.103:5000/1'
+      - 'traefik.http.middlewares.handler_forwardauth2.forwardauth.trustForwardHeader=true'
+      - 'traefik.http.middlewares.handler_forwardauth2.forwardauth.authResponseHeaders=Remote-User, Remote-Groups'
+
+  portainer:
+    image: portainer/portainer
+    container_name: "portainer"
+    networks:
+      - net
+    command: --no-auth -H unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - "traefik.http.routers.portainer.rule=Host(`portainer.docker.wwuzerotrust`)"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.portainer.entrypoints=https'
+      - 'traefik.http.routers.portainer.tls=true'
+      - 'traefik.http.routers.portainer.tls.options=default'
+      - "traefik.http.routers.portainer.middlewares=forwardauths"
+      - "traefik.http.middlewares.forwardauths.chain.middlewares=test_authelia, handler_forwardauth"
+      - 'traefik.http.middlewares.test_authelia.forwardauth.address=http://authelia:9091/api/verify?rd=https://authelia.docker.wwuzerotrust'
+      - 'traefik.http.middlewares.test_authelia.forwardauth.trustForwardHeader=true'
+      - 'traefik.http.middlewares.test_authelia.forwardauth.authResponseHeaders=Remote-User, Remote-Groups'
+      - 'traefik.http.middlewares.handler_forwardauth.forwardauth.address=http://192.168.1.103:5000/1'
+      - 'traefik.http.middlewares.handler_forwardauth.forwardauth.trustForwardHeader=true'
+      - 'traefik.http.middlewares.handler_forwardauth.forwardauth.authResponseHeaders=Remote-User, Remote-Groups'
