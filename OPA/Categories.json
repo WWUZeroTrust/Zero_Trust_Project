@@ -1,0 +1,11 @@
+{
+    "Roles": {
+        
+        "Engineer":[
+            {"username":"John"},
+            {"username":"Scarlette"},
+            {"username":"Joshua"},
+            {"username":"Sam"}
+        ]
+        }
+}
