@@ -2,6 +2,8 @@
 
 ## Overview
 
+!(https://github.com/WWUZeroTrust/WWUZeroTrust.github.io/blob/master/image/Flowchart.png "ZTN Flowchart")
+
 ## Setup
 
 We installed these tools on four different computers and our instructions will reflect that. This is 'Trust Engine and Kolide + ELK Stack Server', 'OPA and Swissknife Handler', 'Network Agent', and Client machine.
