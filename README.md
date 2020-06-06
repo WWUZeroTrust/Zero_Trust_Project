@@ -4,7 +4,7 @@
 
 ## Setup
 
-We installed these tools on four different computers and our instructions will reflect that. 
+We installed these tools on four different computers and our instructions will reflect that. This is 'Trust Engine and Kolide + ELK Stack Server', 'OPA and Swissknife Handler', 'Network Agent', and Client machine.
 
 ### Trust Engine and Kolide + ELK Stack Server
 
@@ -85,7 +85,7 @@ Verify that you can see the installed query pack on the Kolide web interface.
 10. Move the files on the Client from /tmp into /etc/osquery/ on the Client with the following command:
     $ sudo mv /tmp/osqueryfiles/* /etc/osquery/
 
-11. Run OSqueryd on the Client with the following command: 
+11. Run osqueryd on the Client with the following command: 
     $ sudo osqueryd –flagfile=/etc/osquery/osquery.flags 
 
 ### OPA and Swissknife Handler
