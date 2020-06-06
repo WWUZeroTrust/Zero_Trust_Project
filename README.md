@@ -90,12 +90,22 @@ Verify that you can see the installed query pack on the Kolide web interface.
 11. Run osqueryd on the Client with the following command: 
     $ sudo osqueryd –flagfile=/etc/osquery/osquery.flags 
 
-### OPA and Swissknife Handler
-curl -X POST http://localhost:8181/v1/data/myapi/policy/allow --data-binary '{ "input": { "user": "Sam", "access": "read", "object":"server123", "score":"90" } }'
-curl -X POST -H "Content-Type: application/json" -d '{"input": {"user": "Sam", "access": "read", "object":"server123", "score":"90"}}' localhost:8181/v1/data/authz/allow
+##OPA
+1.	Make sure to install OPA.
+    $ https://github.com/open-policy-agent/opa
 
-## Network Agent
-Within the folder there is a .env file which will have to be edited to add passwords for MariaDB and other systems that are being used for this project. 
+2.	To run OPA, use the following command. Make sure to specify the directory for Policy.rego, which is in our OPA repository. 
+    $ ./opa run –server rego/opa/Policy.rego
+
+3.	To query OPA manually, use this command. /v1/data/<Package name>/policy
+    $ curl -X POST http://localhost:8181/v1/data/rbac/authz/allow --data-binary '{ "input": { "user": "Sam", "access": "read", "object":"server123", "score":"90" } }' 
+    
+##SwissKnife Handler
+This is a flask for python application. Caching needs to be implemented to improve reliability. 
+
+1.	Clone the handler.py from the SwissKnife Handler repository. Then run the code.
+    $ python3 handler.py
+
 
 The docker-compose file is comprised of containers and configuration from two different places.
 
