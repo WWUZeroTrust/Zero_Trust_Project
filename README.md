@@ -42,7 +42,7 @@ If step 3 does not work as it didn't for us, you can manually add the queries an
 
 Verify that you can see the installed query pack on the Kolide web interface.
 
-#### Pushing certs, key and osquery flags to Client Machines
+### Pushing certs, key and osquery flags to Client Machines
 1. Pull the osquery.flags file under Zero_Trust_Project/ELK-Kolide-Osquery-Portainer/osqueryfiles
 
 2. Ensure the following options are set within the osquery.flags file
