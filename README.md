@@ -4,22 +4,18 @@
 
 ## Setup
 
+We installed these tools on four different computers and our instructions will reflect that. 
 
+### Kolide/Trust Engine/ELK Stack Server
 
-OPA 
-curl -X POST http://localhost:8181/v1/data/myapi/policy/allow --data-binary '{ "input": { "user": "Sam", "access": "read", "object":"server123", "score":"90" } }'
-curl -X POST -H "Content-Type: application/json" -d '{"input": {"user": "Sam", "access": "read", "object":"server123", "score":"90"}}' localhost:8181/v1/data/authz/allow
-
-## Setup
-
-### Generate Certificates
+#### Generate Certificates
 Kolide Fleet server needs to be configured to use TLS certificates for communication with Osquery agents. These certificates should be generated and placed within the `kolide/certs` directory.
 1. `openssl genrsa -out server.key 4096`
 2. `openssl req -new -key server.key -out server.csr`
 3. `openssl x509 -req -days 366 -in /tmp/server.csr -signkey server.key -out server.cert`
 The `server.cert` certificate will automatically be appended to the Kolide containers's `/etc/ssl/certs/ca-certificates.crt` trusted certificate list during its startup.
 
-### Configure Environment Variables
+#### Configure Environment Variables
 A number of environment variables need to be set prior to executing `setup.sh`.
 1. `export ELK_VERSION=7.6.2`
 2. `export MYSQL_PASS=mysqlpass`
@@ -27,10 +23,10 @@ A number of environment variables need to be set prior to executing `setup.sh`.
 4. `export JWT_KEY=jwtkey`
 5. `export ELASTIC_PASS=elasticpass`
 
-### Run Startup Script
+#### Run Startup Script
 `chmod +x setup.sh && ./setup.sh`
 
-### Configure Kolide
+#### Configure Kolide
 Kolide needs to be configured after it's container has been launched. Access the Kolide server via `https://kolideserver:8080/` and follow the setup instructions.
 
 ### Add Osquery Query Packs
@@ -42,3 +38,9 @@ Add the generated `server.cert` to your trusted certificate keystore otherwise f
 3. `fleetctl apply -f querypack.yaml`
 
 Verify that you can see the installed query pack on the Kolide web interface.
+
+
+### OPA and Swissknife Handler
+curl -X POST http://localhost:8181/v1/data/myapi/policy/allow --data-binary '{ "input": { "user": "Sam", "access": "read", "object":"server123", "score":"90" } }'
+curl -X POST -H "Content-Type: application/json" -d '{"input": {"user": "Sam", "access": "read", "object":"server123", "score":"90"}}' localhost:8181/v1/data/authz/allow
+
