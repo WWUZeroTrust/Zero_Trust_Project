@@ -1,4 +1,4 @@
-# Zero_Trust_Project
+# Zero Trust Project
 
 ## Overview
 
@@ -6,7 +6,7 @@
 
 We installed these tools on four different computers and our instructions will reflect that. 
 
-### Kolide/Trust Engine/ELK Stack Server
+### Trust Engine and Kolide + ELK Stack Server
 
 #### Generate Certificates
 Kolide Fleet server needs to be configured to use TLS certificates for communication with Osquery agents. These certificates should be generated and placed within the `kolide/certs` directory.
@@ -39,8 +39,8 @@ Add the generated `server.cert` to your trusted certificate keystore otherwise f
 
 Verify that you can see the installed query pack on the Kolide web interface.
 
-
 ### OPA and Swissknife Handler
 curl -X POST http://localhost:8181/v1/data/myapi/policy/allow --data-binary '{ "input": { "user": "Sam", "access": "read", "object":"server123", "score":"90" } }'
 curl -X POST -H "Content-Type: application/json" -d '{"input": {"user": "Sam", "access": "read", "object":"server123", "score":"90"}}' localhost:8181/v1/data/authz/allow
 
+## Network Agent
