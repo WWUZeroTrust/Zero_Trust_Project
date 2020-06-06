@@ -36,6 +36,7 @@ Add the generated `server.cert` to your trusted certificate keystore otherwise f
 1. `fleetctl config set --address https://kolideserver:8080`
 2. `fleetctl login`
 3. `fleetctl apply -f querypack.yaml`
+If step 3 does not work as it didn't for us, you can manually add the queries and query packs on the Kolide UI.
 
 Verify that you can see the installed query pack on the Kolide web interface.
 
