@@ -15,6 +15,8 @@ Kolide Fleet server needs to be configured to use TLS certificates for communica
 3. `openssl x509 -req -days 366 -in /tmp/server.csr -signkey server.key -out server.cert`
 The `server.cert` certificate will automatically be appended to the Kolide containers's `/etc/ssl/certs/ca-certificates.crt` trusted certificate list during its startup.
 
+
+
 #### Configure Environment Variables
 A number of environment variables need to be set prior to executing `setup.sh`.
 1. `export ELK_VERSION=7.6.2`
@@ -40,12 +42,80 @@ If step 3 does not work as it didn't for us, you can manually add the queries an
 
 Verify that you can see the installed query pack on the Kolide web interface.
 
+#### Pushing certs, key and osquery flags to Client Machines
+1. Pull the osquery.flags file under Zero_Trust_Project/ELK-Kolide-Osquery-Portainer/osqueryfiles
+
+2. Ensure the following options are set within the osquery.flags file
+    --enroll_secret_path=/etc/osquery/enroll_secret
+    --tls_server_certs=/etc/osquery/localhost_8080.pem
+    --tls_hostname=192.168.1.101
+    --host_identifier=hostname
+    --enroll_tls_endpoint=/api/v1/osquery/enroll
+    --config_plugin=tls
+    --config_tls_endpoint=/api/v1/osquery/config
+    --config_refresh=10
+    --disable_distributed=false
+    --distributed_plugin=tls
+    --distributed_interval=3
+    --distributed_tls_max_attempts=3
+    --distributed_tls_read_endpoint=/api/v1/osquery/distributed/read
+    --distributed_tls_write_endpoint=/api/v1/osquery/distributed/write
+    --logger_plugin=tls
+    --logger_tls_endpoint=/api/v1/osquery/log
+    --logger_tls_period=10
+
+3. On Trust Engine start Kolide Fleet server with command: 
+    $ sudo systemctl start fleet 
+
+4. Browse to https://kolideserver:8080 on Host and login to Kolide Fleet 
+
+5. Click on add host and download Fleet Certificate and move from Downloads into the osqueryfiles directory
+
+6. Create a file called enroll_secret and paste the contents of the enroll secret field on this Fleet webpage  
+
+7. Install open ssh server with the following command
+    $ sudo apt-get install openssh-server
+
+8. Ensure that the Client has the ssh port open with: 
+    $ sudo ufw allow 22 
+
+9. Run the following command to copy the contents of the osqueryfiles directory from the Trust Engine Host to the Client in /tmp: 
+    $ sudo scp –r <LOCATION_OF_DIRECTORY_ON_HOST>/osqueryfiles <CLIENT_USERNAME>@<IP_ADDRESS>:/tmp 
+
+10. Move the files on the Client from /tmp into /etc/osquery/ on the Client with the following command:
+    $ sudo mv /tmp/osqueryfiles/* /etc/osquery/
+
+11. Run OSqueryd on the Client with the following command: 
+    $ sudo osqueryd –flagfile=/etc/osquery/osquery.flags 
+
 ### OPA and Swissknife Handler
 curl -X POST http://localhost:8181/v1/data/myapi/policy/allow --data-binary '{ "input": { "user": "Sam", "access": "read", "object":"server123", "score":"90" } }'
 curl -X POST -H "Content-Type: application/json" -d '{"input": {"user": "Sam", "access": "read", "object":"server123", "score":"90"}}' localhost:8181/v1/data/authz/allow
 
 ## Network Agent
+Within the folder there is a .env file which will have to be edited to add passwords for MariaDB and other systems that are being used for this project. 
 
+The docker-compose file is comprised of containers and configuration from two different places.
+
+The first is the Wodby Docker4Wordpress stack of containers located here:
+https://github.com/Wodby/docker4wordpress
+
+With setup instructions for this, if necessary, located here:
+https://wodby.com/docs/stacks/wordpress/local/#usage
+
+The second is the Authelia docker-compose file located here:
+https://github.com/authelia/authelia/tree/master/compose/local
+
+This link above also gives examples of the user database file and configuration. 
+
+## Ideas for adding onto this project
+
+- Add caching to the Handler and Trust Engine to ensure it only runs once
+- Add more fields to Trust Engine to get more accurate scores
+- Change the scoring method to better suit particular fields
+- Implement IDS system with endpoint monitoring to add to logs going to the ELK stack
+- Implement LDAP system to integrate with Authelia 
+- Containerize all the systems and programs so that they can all be spun up quickly and easily
 
 
 ## Sources:
