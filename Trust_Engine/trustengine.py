@@ -35,7 +35,7 @@ def get_username(username):
  
     #these are the fields of preset values from osquery
     #they are hardcoded into the trust scoring 
-    data_liu_type = ['user', 'boot_time', 'blah']
+    data_liu_type = ['user', 'boot_time', 'runlevel']
     data_liu_user = ['testosquery', 'reboot', 'runlevel']
     data_liu_host = [':1', '5.3.0-46-generic']
     data_liu_pid = ['0', '53', '2642']
@@ -113,36 +113,63 @@ def trustengine(data_array, number, user):
     #creates an array of the fields from the query, when the number is passed to the trust engine function
     #the index of this array is the number that gets passed when the trust engine function is called above
     json_array_field = ['time', 'type', 'user','host', 'pid']
+    
     #counts how many times a match is not found in the query
     miss_counter = 0
+    
     #sets the length of the predefined array passed into the trust engine function
     max_length = len(data_array)
+    
+    #loops through the json data which will look like the following:
+    #[{"type" : "bootlevel", "user": "bootlevel"}, {"type" : "user", "user" : "testosquery"}, {"type" : "runlevel", "user" : "runlevel"}]
+    #between the [] is an array and between the {} is an index of the array
+    #so each time this for loop runs it will find an index of the array
+    #then i will be this data {"type" : "bootlevel"}
     for i in json_data:
         miss_counter = 0
+        
+        #this will run through each field in the index of the array 
+        #so x will be "type" : "bootlevel" the first time through and then "type" : "user" the second time
         for x in data_array:
             print("----------------------------starting field-------------------------------")
+            
+            #checks if the current field in the index of the array(x) we receieve from elasticsearch and osquery
+            #is not equal to the data stored in the pre-defined fields in the get_username function
             if x != i[json_array_field[number]]:
                 print("json_data:",i[json_array_field[number]],"   data_liu_TYPE:", x, "       result:  not equal")
+                
+                #increment the miss counter if it doesn't find a match
                 miss_counter+=1
+                #when the miss counter reaches the end of the array of predefined values reset it and subtract 3 from the score
                 if miss_counter == max_length:
                     miss_counter = 0
                     print("SCORE before loop: ", SCORE)
                     SCORE-=3
+                    
+                    #calls the function field_score_add and passes the score to it
                     field_score_add(json_array_field[number], SCORE)
-                    print("SCORE: ", SCORE)
-
+                    
+            #reset the score to 0 between the if statements
             SCORE = 0
             print("----------------------------starting field-------------------------------")
+            
+            #checks if the current field in the index of the array(x) we receieve from elasticsearch and osquery
+            #is equal to the data stored in the pre-defined fields in the get_username function
             if x == i[json_array_field[number]]:
                 print("json_data:",i[json_array_field[number]],"   data_liu_TYPE:", x, "       result:  equal")
+                
+                #if it finds match then reset the miss counter
                 miss_counter = 0
                 print("SCORE before loop: ", SCORE)
                 SCORE+=3
+                
+                #passes a score to field_score_add  
                 field_score_add(json_array_field[number], SCORE)
-                print("SCORE: ", SCORE)
-
+            
+            #when it finds a match break go to the next json data array, so increment to the next i in json_data
             if miss_counter == 0:
                 break
+            #resets the score every time the if statement runs
             SCORE = 0
             print("----------------------------all done with field-------------------------------")
 
@@ -155,6 +182,7 @@ def pass_score(score):
 
     data = '{"value": "%s"}' %score
 
+    #IP address of the Policy engine and API was set to /2
     return requests.put('http://192.168.1.103:5000/2', headers=headers, data=data)
 
 print("lock:", lock)
@@ -188,4 +216,5 @@ def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 if __name__ == "__main__":
+    #IP address of the current trust engine machine
     app.run(host='192.168.1.101', port=5001, debug=True)
