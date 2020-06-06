@@ -90,7 +90,7 @@ Verify that you can see the installed query pack on the Kolide web interface.
 11. Run osqueryd on the Client with the following command: 
     $ sudo osqueryd –flagfile=/etc/osquery/osquery.flags 
 
-###OPA
+### OPA
 1.	Make sure to install OPA.
     $ https://github.com/open-policy-agent/opa
 
@@ -100,7 +100,7 @@ Verify that you can see the installed query pack on the Kolide web interface.
 3.	To query OPA manually, use this command. /v1/data/<Package name>/policy
     $ curl -X POST http://localhost:8181/v1/data/rbac/authz/allow --data-binary '{ "input": { "user": "Sam", "access": "read", "object":"server123", "score":"90" } }' 
     
-###SwissKnife Handler
+### SwissKnife Handler
 This is a flask for python application. Caching needs to be implemented to improve reliability. 
 
 1.	Clone the handler.py from the SwissKnife Handler repository. Then run the code.
