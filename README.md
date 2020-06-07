@@ -103,7 +103,7 @@ Verify that you can see the installed query pack on the Kolide web interface.
 ### SwissKnife Handler
 This is a flask for python application. Caching needs to be implemented to improve reliability. 
 
-1.	Clone the handler.py from the SwissKnife Handler repository. Then run the code.
+Clone the handler.py from the SwissKnife Handler repository. Then run the code.
     $ python3 handler.py
 
 ### Network Agent
