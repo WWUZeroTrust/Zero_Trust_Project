@@ -98,13 +98,13 @@ Verify that you can see the installed query pack on the Kolide web interface.
     $ ./opa run –server rego/opa/Policy.rego
 
 3.	To query OPA manually, use this command. /v1/data/<Package name>/policy
-    $ curl -X POST http://localhost:8181/v1/data/rbac/authz/allow --data-binary '{ "input": { "user": "Sam", "access": "read", "object":"server123", "score":"90" } }' 
+     $ curl -X POST http://localhost:8181/v1/data/rbac/authz/allow --data-binary '{ "input": { "user": "Sam", "access": "read", "object":"server123", "score":"90" } }' 
     
 ### SwissKnife Handler
 This is a flask for python application. Caching needs to be implemented to improve reliability. 
 
 Clone the handler.py from the SwissKnife Handler repository. Then run the code.
-    $ python3 handler.py
+     $ python3 handler.py
 
 ### Network Agent
 The docker-compose file is comprised of containers and configuration from two different places.
